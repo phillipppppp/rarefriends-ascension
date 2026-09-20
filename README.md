@@ -5,7 +5,7 @@ irreversible choice: **cash it out, ascend with it, or wear it.**
 
 Built with [FriendSDK](https://github.com/spokesz/friendsdk) v0.1.2 for the Rare Friends Vibeathon.
 
-- **Playable preview:** _(link added on deploy)_
+- **Playable preview:** **https://phillipppppp.github.io/rarefriends-ascension/**
 - **Builder:** [@phillipppppp](https://github.com/phillipppppp)
 - **Category:** Economy Potential
 
