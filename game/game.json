@@ -1,0 +1,13 @@
+{
+  "name": "Rare Friends: Ascension",
+  "consumable": "Cell",
+  "price": "1000000000000000000",
+  "outcomes": [
+    { "name": "Slag", "chanceBps": 1500, "reward": "0" },
+    { "name": "Plating", "chanceBps": 2500, "reward": "200000000000000000" },
+    { "name": "Coil", "chanceBps": 2500, "reward": "500000000000000000" },
+    { "name": "Servo", "chanceBps": 2000, "reward": "1125000000000000000" },
+    { "name": "Optic", "chanceBps": 1000, "reward": "2500000000000000000" },
+    { "name": "Reactor", "chanceBps": 500, "reward": "5000000000000000000" }
+  ]
+}
