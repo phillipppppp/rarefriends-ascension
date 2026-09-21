@@ -59,6 +59,20 @@ npx friendsdk check games/ascension     # validate the economy
 npx friendsdk test  games/ascension     # headless browser check
 ```
 
+Copy `tools/` alongside them to run the project's own tests:
+
+```bash
+node tools/economy-sim.mjs   # whale analysis, 400 runs per profile
+node tools/record-test.ts    # save-code encode/decode units
+node tools/record-e2e.mts    # save codes, driven through the real runtime
+node tools/loop-e2e.mts      # the whole loop: walk, buy, fabricate, reveal, choose
+```
+
+`loop-e2e` is the interesting one: it walks the Friend across the station by clicking
+world coordinates through the SDK's own `project()`, approves the host's purchase
+confirmation, fabricates, and asserts the reward reveal gates the three-way choice until
+the component is actually revealed.
+
 ## The economy
 
 One Cell costs **1 RF**. Both of the SDK's shipped examples run a 10% house edge, so

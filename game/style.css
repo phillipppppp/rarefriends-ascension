@@ -88,7 +88,6 @@
 .asc-item small{display:block;margin-top:4px;opacity:.7;line-height:1.5}
 
 .asc-reward{text-align:center}
-.asc-reward>span{font-size:60px;color:#00e5ff;text-shadow:0 0 24px rgba(0,229,255,.7)}
 .asc-reward button{margin:6px}
 .asc-fork{font-weight:700;color:#9cf0ff}
 
@@ -136,3 +135,18 @@
   resize:vertical;word-break:break-all}
 .asc-record-code:focus{outline:2px solid #00e5ff;outline-offset:-2px}
 .asc-record-message{margin:10px 0 0;color:#7fe3ff;font-size:13px}
+
+/* The SDK reveal fills its container and themes through --game-* custom properties. */
+.asc-reveal{width:100%;height:190px;margin:0 0 10px;
+  --game-ink:#dff3ff;
+  --game-paper:#081722;
+  --game-accent:#00e5ff;
+  --game-font:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.asc-reveal .rf-reward-skip{background:#062230;color:#bfefff;border-color:rgba(0,229,255,.5)}
+.asc-reveal .rf-reward-skip:hover:not(:disabled){background:rgba(0,118,150,.5)}
+
+/* The SDK frame paints menus #eee on #111. The station is dark, so the cyan menu
+   copy needs a dark panel under it to keep contrast. */
+.asc-game .rf-frame-menu{background:#081722;border-color:rgba(0,229,255,.45);color:#dff3ff}
+.asc-game .rf-frame-menu-heading{border-bottom-color:rgba(0,229,255,.28)}
+.asc-game .rf-frame-menu-heading h2{color:#9cf0ff;letter-spacing:.04em}

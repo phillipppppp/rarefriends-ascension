@@ -9,9 +9,12 @@ import { formatGameAmount } from "@rarefriends/friendsdk/ui";
 import { maximumPrize, type GameSnapshot, type GamePlay } from "@rarefriends/friendsdk/game";
 import { createFriendSoundKit, type FriendSoundKit, type FriendSoundCue } from "@rarefriends/friendsdk/sounds";
 import { COSMETICS, CosmeticArt, cosmeticById, type CosmeticSlot } from "./cosmetics";
+import { RewardReveal } from "@rarefriends/friendsdk/reveal";
 import { encodeRecord, decodeRecord } from "./record";
+import { COMPONENT_ITEMS } from "./components";
 import "@rarefriends/friendsdk/frame.css";
 import "@rarefriends/friendsdk/world-view.css";
+import "@rarefriends/friendsdk/reveal.css";
 import "./style.css";
 
 const hex = getWorldPreset("06-orbital-hex-complete");
@@ -143,6 +146,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [fatigue, setFatigue] = useState(0);
   const [recordInput, setRecordInput] = useState("");
   const [recordMessage, setRecordMessage] = useState("");
+  const [revealDone, setRevealDone] = useState(false);
   const [owned, setOwned] = useState<readonly string[]>([]);
   const [worn, setWorn] = useState<Partial<Record<CosmeticSlot, string>>>({});
   const [busy, setBusy] = useState(false);
@@ -256,7 +260,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
       const version = epoch.current;
       const play = pending ?? (await client.play(1n))[0];
       const settled = await client.settle(play.id);
-      if (version === epoch.current) { setResult(settled); setMenu("reward"); }
+      if (version === epoch.current) { setRevealDone(false); setResult(settled); setMenu("reward"); }
     }, "reveal-common");
 
   const capUnits = LIFETIME_CAP * RF_UNIT;
@@ -415,14 +419,28 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
             </>
           ) : menu === "reward" && outcome ? (
             <div className="asc-reward">
-              <span aria-hidden="true">◈</span>
+              {/* The reveal fills its container, so it needs one with a real height. */}
+              <div className="asc-reveal">
+                <RewardReveal
+                  item={COMPONENT_ITEMS[result!.outcomeId! - 1]}
+                  revealKey={String(result!.id)}
+                  reducedMotion={reducedMotion}
+                  skipLabel="Open it"
+                  onComplete={() => setRevealDone(true)}
+                />
+              </div>
               <h3>{outcome.name}</h3>
               <p>{rf(outcome.reward)} · {outcome.chanceBps / 100}% chance</p>
-              <p className="asc-fork">Redeem it, commit it, or keep it as salvage for the Outfitter.</p>
+              {/* The choice is the point of the game, so it waits until the component is actually revealed. */}
+              <p className="asc-fork">
+                {revealDone
+                  ? "Redeem it, commit it, or keep it as salvage for the Outfitter."
+                  : "Fabricating…"}
+              </p>
               {outcome.reward > 0n && (
                 <button
                   type="button"
-                  disabled={busy || paused}
+                  disabled={busy || paused || !revealDone}
                   onClick={() => void act(() => client.redeem(result!.outcomeId!, 1n), "reward", () => {
                     setMessage(`Redeemed for ${rf(outcome.reward)}.`);
                     setMenu(null);
@@ -435,13 +453,13 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
                 <button
                   type="button"
                   className="rf-frame-primary"
-                  disabled={busy || paused}
+                  disabled={busy || paused || !revealDone}
                   onClick={() => { commit(result!.outcomeId! - 1); setMenu("core"); }}
                 >
                   Commit to the Core
                 </button>
               )}
-              <button type="button" disabled={busy || paused} onClick={() => navigate(null)}>Keep as salvage</button>
+              <button type="button" disabled={busy || paused || !revealDone} onClick={() => navigate(null)}>Keep as salvage</button>
             </div>
           ) : menu === "core" ? (
             <>
