@@ -124,3 +124,15 @@
   .asc-mobile-hint{display:inline}
   .asc-desktop-hint{display:none}
 }
+
+/* Save codes: the sandboxed frame has no storage, so progress travels as text. */
+.asc-record{border:1px solid rgba(0,229,255,.28);background:rgba(0,229,255,.05);
+  padding:14px;margin:16px 0}
+.asc-record>strong{display:block;margin-bottom:6px;color:#9cf0ff;letter-spacing:.05em}
+.asc-record-label{display:block;margin:12px 0 5px;font-size:12px;color:#7fb8cf;
+  letter-spacing:.04em;text-transform:uppercase}
+.asc-record-code{width:100%;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:#04141d;color:#bfefff;border:1px solid rgba(0,229,255,.35);padding:8px;
+  resize:vertical;word-break:break-all}
+.asc-record-code:focus{outline:2px solid #00e5ff;outline-offset:-2px}
+.asc-record-message{margin:10px 0 0;color:#7fe3ff;font-size:13px}

@@ -153,6 +153,36 @@ The runtime paints the Friend to a `<canvas>`, so overlays track the sprite by r
 live position the runtime publishes and projecting it through the SDK's exported `project()`.
 Nothing reaches into the canvas, the parent page, or the wallet.
 
+## Ascension Records
+
+Progress belongs to the Friend, so it has to outlive the tab. It cannot use browser storage:
+the SDK runs the game in `<iframe sandbox="allow-scripts">` without `allow-same-origin`, which
+gives the document an opaque origin. Measured in that frame:
+
+```
+localStorage   = THROWS SecurityError
+sessionStorage = THROWS SecurityError
+cookie         = THROWS SecurityError
+```
+
+The runtime bridge is no help either — it is a closed allowlist of six game actions
+(`read`, `canBuy`, `buy`, `play`, `settle`, `redeem`) with numeric arguments, so game code
+cannot hand custom state to the parent.
+
+So a record is a code the player copies: rank, committed components and wearables, encoded
+with an FNV-1a checksum and **bound to the token id that earned it**. A record from another
+Friend is refused by name, and a damaged one is rejected rather than half-applied.
+
+```bash
+node tools/record-test.ts     # encode/decode units
+node tools/record-e2e.mts     # drives the real sandboxed runtime
+```
+
+The end-to-end test generates a record, confirms another Friend's record and a corrupted
+record are both refused, restores an Ascendant record, and checks the restored state
+re-encodes identically. On-chain this state is intended to live against the token id, which
+removes the need for codes entirely.
+
 ## Simulated mechanics
 
 Everything in the preview is simulated, as the SDK's preview client intends. Specifically:
@@ -171,11 +201,17 @@ runtime. None of them are reimplemented in game code.
 
 ## Known issues
 
-- **Progress does not persist.** Reloading resets charge, rank, wearables and inventory.
+- **Held components do not survive a reload.** Rank, committed components and wearables do,
+  through an Ascension Record; the SDK's preview ledger is in memory, so inventory cannot.
 - **Ascendant is out of reach in a single demo session** by design; it needs roughly 45 RF
   of fabrication to complete the rare-component set.
 - **Commit fatigue is subtle at the top rank**, where the rarity gate binds first and does
   the real work.
+- **The game does not load inside MetaMask's in-app mobile browser.** The SDK renders the
+  game in `<iframe sandbox="allow-scripts">` and the bridge handshake never completes there.
+  Verified working in Chromium and WebKit, at desktop and phone viewports, so this is that
+  app's webview rather than the engine — and it affects every FriendSDK game equally,
+  including the SDK's own example. Desktop with a browser-extension wallet works.
 - Tested at desktop and mobile widths via the SDK's automated browser checks. Not yet tested
   on physical iOS hardware.
 

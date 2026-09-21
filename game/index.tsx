@@ -9,6 +9,7 @@ import { formatGameAmount } from "@rarefriends/friendsdk/ui";
 import { maximumPrize, type GameSnapshot, type GamePlay } from "@rarefriends/friendsdk/game";
 import { createFriendSoundKit, type FriendSoundKit, type FriendSoundCue } from "@rarefriends/friendsdk/sounds";
 import { COSMETICS, CosmeticArt, cosmeticById, type CosmeticSlot } from "./cosmetics";
+import { encodeRecord, decodeRecord } from "./record";
 import "@rarefriends/friendsdk/frame.css";
 import "@rarefriends/friendsdk/world-view.css";
 import "./style.css";
@@ -140,6 +141,8 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [spent, setSpent] = useState<readonly bigint[]>([]);
   const [charge, setCharge] = useState(0n);
   const [fatigue, setFatigue] = useState(0);
+  const [recordInput, setRecordInput] = useState("");
+  const [recordMessage, setRecordMessage] = useState("");
   const [owned, setOwned] = useState<readonly string[]>([]);
   const [worn, setWorn] = useState<Partial<Record<CosmeticSlot, string>>>({});
   const [busy, setBusy] = useState(false);
@@ -161,6 +164,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     setCommitted(definition.outcomes.map(() => 0n));
     setSpent(definition.outcomes.map(() => 0n));
     setCharge(0n); setFatigue(0); setOwned([]); setWorn({});
+    setRecordInput(""); setRecordMessage("");
     locked.current = false;
     void client.read().then(value => { if (version === epoch.current) setSnapshot(value); }).catch(cause => {
       if (version === epoch.current) setError(cause instanceof Error ? cause.message : "Could not load the preview.");
@@ -240,7 +244,10 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const outcome = result?.outcomeId ? definition.outcomes[result.outcomeId - 1] : null;
 
   /** Components still free to redeem, commit or spend. */
-  const held = (index: number) => (snapshot.inventory[index] ?? 0n) - (committed[index] ?? 0n) - (spent[index] ?? 0n);
+  const held = (index: number) => {
+    const remaining = (snapshot.inventory[index] ?? 0n) - (committed[index] ?? 0n) - (spent[index] ?? 0n);
+    return remaining > 0n ? remaining : 0n;
+  };
   const heldTotal = definition.outcomes.reduce((total, _item, index) => total + held(index), 0n);
   const salvage = definition.outcomes.reduce((total, item, index) => total + held(index) * item.reward, 0n);
 
@@ -297,6 +304,28 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     setWorn(current => ({ ...current, [item.slot]: id }));
     sound.current?.play("purchase");
     setMessage(`${item.name} fitted. Salvage spent is gone for good.`);
+  };
+
+  /** A record only carries progress the Friend earned; held components are not restored. */
+  const currentRecord = committed.length === definition.outcomes.length
+    ? encodeRecord({ friendId, charge, committed, owned, worn })
+    : "";
+
+  const restoreRecord = () => {
+    const result = decodeRecord(recordInput, friendId, definition.outcomes.length);
+    if (!result.ok) { setRecordMessage(result.reason); return; }
+    // Ignore anything the current build no longer ships, so an old record cannot smuggle in unknown items.
+    const validOwned = result.record.owned.filter(id => cosmeticById(id));
+    const wornEye = result.record.worn.eye && validOwned.includes(result.record.worn.eye) ? result.record.worn.eye : undefined;
+    const wornHead = result.record.worn.head && validOwned.includes(result.record.worn.head) ? result.record.worn.head : undefined;
+    setCharge(result.record.charge > LIFETIME_CAP * RF_UNIT ? LIFETIME_CAP * RF_UNIT : result.record.charge);
+    setCommitted(result.record.committed);
+    setOwned(validOwned);
+    setWorn({ eye: wornEye, head: wornHead });
+    setFatigue(0);
+    setRecordInput("");
+    setRecordMessage("Record restored. Your rank and wearables are back.");
+    sound.current?.play("reward");
   };
 
   const title =
@@ -567,10 +596,57 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
                 <input type="checkbox" checked={reducedMotion} onChange={event => setReducedMotion(event.target.checked)} />
                 {" "}Reduce motion
               </label>
+              <div className="asc-record">
+                <strong>Ascension Record</strong>
+                <p className="asc-note">
+                  This Friend&rsquo;s rank, committed components and wearables, as a code. Copy it before you
+                  leave and paste it back next time. A record only loads onto the Friend that earned it.
+                </p>
+                <label className="asc-record-label" htmlFor="asc-current-record">Your record</label>
+                <textarea
+                  id="asc-current-record"
+                  className="asc-record-code"
+                  readOnly
+                  rows={2}
+                  value={currentRecord}
+                  onFocus={event => event.currentTarget.select()}
+                />
+                <button
+                  type="button"
+                  disabled={!currentRecord}
+                  onClick={() => {
+                    const field = document.getElementById("asc-current-record") as HTMLTextAreaElement | null;
+                    field?.select();
+                    // Clipboard access can be refused in the sandboxed frame; selecting the text always works.
+                    void navigator.clipboard?.writeText(currentRecord)
+                      .then(() => setRecordMessage("Record copied."))
+                      .catch(() => setRecordMessage("Copy blocked here — the record is selected, press Ctrl+C."));
+                  }}
+                >
+                  Copy record
+                </button>
+
+                <label className="asc-record-label" htmlFor="asc-restore-record">Restore a record</label>
+                <textarea
+                  id="asc-restore-record"
+                  className="asc-record-code"
+                  rows={2}
+                  placeholder="Paste an Ascension Record"
+                  value={recordInput}
+                  onChange={event => { setRecordInput(event.target.value); setRecordMessage(""); }}
+                />
+                <button type="button" disabled={busy || paused || !recordInput.trim()} onClick={restoreRecord}>
+                  Restore
+                </button>
+                {recordMessage && <p className="asc-record-message" role="status">{recordMessage}</p>}
+              </div>
+
               <p className="asc-note">
                 All economy actions are simulated. Committing, salvage spending and ascension ranks are tracked
                 in this preview only; the on-chain burn is documented in the project README for later review.
-                Reloading resets this preview. Wallet connection and ownership verification are provided by the SDK.
+                Held components do not survive a reload — the SDK&rsquo;s preview ledger is in memory — but your
+                rank and wearables do, through the record above. Wallet connection and ownership verification
+                are provided by the SDK.
               </p>
             </>
           ) : null}
