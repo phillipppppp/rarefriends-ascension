@@ -152,7 +152,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [worldNode, setWorldNode] = useState<HTMLDivElement | null>(null);
   const sound = useRef<FriendSoundKit | null>(null);
@@ -162,9 +162,10 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
 
   useEffect(() => {
     const version = ++epoch.current;
-    sound.current = createFriendSoundKit({ muted: true });
+    // The SDK default is unmuted; audio still needs a user gesture before it can start.
+    sound.current = createFriendSoundKit();
     setSnapshot(null); setMenu(null); setResult(null); setError(""); setMessage("");
-    setBusy(false); setMuted(true);
+    setBusy(false); setMuted(false);
     setCommitted(definition.outcomes.map(() => 0n));
     setSpent(definition.outcomes.map(() => 0n));
     setCharge(0n); setFatigue(0); setOwned([]); setWorn({});
@@ -198,7 +199,12 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     }
   }
 
-  const navigate = (next: Menu) => { if (!busy && !paused) { setMenu(next); setError(""); setMessage(""); } };
+  const navigate = (next: Menu) => {
+    if (busy || paused) return;
+    // Called from a click or keypress, so this is a valid moment to start audio.
+    void sound.current?.unlock();
+    setMenu(next); setError(""); setMessage("");
+  };
 
   /** Commit fatigue bleeds off once the player stops dumping. */
   useEffect(() => {
