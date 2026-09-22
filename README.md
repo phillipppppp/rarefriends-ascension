@@ -70,6 +70,7 @@ node tools/record-e2e.mts      # save codes, driven through the real runtime
 node tools/loop-e2e.mts        # the whole loop: walk, buy, fabricate, reveal, choose
 node tools/outcomes-e2e.mts    # forces a miss and a jackpot, checks both screens
 node tools/race-e2e.mts        # click-spam cannot duplicate commits or purchases
+node tools/fuzz-e2e.mts        # randomised session, invariants must hold throughout
 node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
 node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
 ```
