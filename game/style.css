@@ -150,3 +150,9 @@
 .asc-game .rf-frame-menu{background:#081722;border-color:rgba(0,229,255,.45);color:#dff3ff}
 .asc-game .rf-frame-menu-heading{border-bottom-color:rgba(0,229,255,.28)}
 .asc-game .rf-frame-menu-heading h2{color:#9cf0ff;letter-spacing:.04em}
+
+/* A showcase state is granted, not earned, so it is labelled wherever it shows. */
+.asc-showcase-flag{background:#ffb36b !important;color:#2a1600 !important;
+  border-color:#ffd9ad !important;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.asc-showcase{border-color:rgba(255,179,107,.45);background:rgba(255,179,107,.07)}
+.asc-showcase>strong{color:#ffb36b}

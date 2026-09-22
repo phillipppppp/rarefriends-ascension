@@ -9,6 +9,14 @@ Built with [FriendSDK](https://github.com/spokesz/friendsdk) v0.1.2 for the Rare
 - **Builder:** [@phillipppppp](https://github.com/phillipppppp)
 - **Category:** Economy Potential
 
+![A fully ascended Friend on the orbital station](docs/hero.png)
+
+> **Short on time?** Reaching Ascendant takes roughly 45 RF of fabrication, more than a
+> quick session allows. Open **Settings → Show me Ascendant** to fill your Friend with a
+> finished state — top rank, full aura and every wearable — and see the endgame straight
+> away. It is labelled **SHOWCASE** in the HUD while active, because it is a demonstration
+> rather than earned progress, and **Clear showcase** puts it back.
+
 ---
 
 ## The idea
@@ -73,6 +81,7 @@ node tools/race-e2e.mts        # click-spam cannot duplicate commits or purchase
 node tools/fuzz-e2e.mts        # randomised session, invariants must hold throughout
 node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
 node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
+node tools/screenshots.mts     # regenerates docs/ images from the real runtime
 ```
 
 The SDK typechecks `src` and `examples` but not `games`, so `game/tsconfig.json` adds
@@ -130,6 +139,8 @@ components and sustained play.**
 | Radiant | 7 RF | 10 | 3 Coil, 1 Optic | 70% |
 | Ascendant | 11 RF | 16 | 3 Optic, 2 Reactor | 55% |
 
+![The Core, showing the gates for the next rank](docs/core.png)
+
 Four separate defences against wealth simply buying rank:
 
 - **Rarity gates.** Optics drop at 10% and Reactors at 5%. Neither can be bought at any
@@ -173,6 +184,8 @@ The selected Generations NFT is the character, not a portrait on a menu.
 - **Ascension aura** builds across five visible tiers as the Friend ranks up.
 - **Wearables** are worn on the sprite itself, in two slots, with the best pieces gated
   behind rank rather than spending.
+
+![The Outfitter, with the better wearables locked behind rank](docs/outfitter.png)
 
 The runtime paints the Friend to a `<canvas>`, so overlays track the sprite by reading the
 live position the runtime publishes and projecting it through the SDK's exported `project()`.

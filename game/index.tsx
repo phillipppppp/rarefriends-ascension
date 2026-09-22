@@ -82,6 +82,17 @@ const fatigueFactor = (fatigue: number) =>
  */
 const LIFETIME_CAP = 20n;
 
+/**
+ * A fully ascended state, so the endgame can be seen without the play it normally takes.
+ * Charge and components match the Ascendant gates exactly: 16 commits, 3 Optic, 2 Reactor.
+ * This is a showcase, not progress, and the HUD says so while it is active.
+ */
+const SHOWCASE = {
+  charge: 11n,
+  committed: [0n, 2n, 3n, 4n, 3n, 4n] as readonly bigint[],
+  worn: { eye: "scope", head: "crown" } as { eye?: string; head?: string },
+};
+
 /** Deterministic chassis line, seeded from the Friend's token id. Same Friend always ascends the same way. */
 const CHASSIS = ["Aurora", "Basalt", "Cinder", "Drift", "Ember", "Flux"] as const;
 const chassisFor = (friendId: bigint) => CHASSIS[Number(((friendId % 6n) + 6n) % 6n)];
@@ -147,6 +158,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [recordInput, setRecordInput] = useState("");
   const [recordMessage, setRecordMessage] = useState("");
   const [revealDone, setRevealDone] = useState(false);
+  const [showcase, setShowcase] = useState(false);
   const [owned, setOwned] = useState<readonly string[]>([]);
   const [worn, setWorn] = useState<Partial<Record<CosmeticSlot, string>>>({});
   const [busy, setBusy] = useState(false);
@@ -179,7 +191,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     };
     setCommitted([...ledger.current.committed]);
     setSpent([...ledger.current.spent]);
-    setCharge(0n); setFatigue(0); setOwned([]); setWorn({});
+    setCharge(0n); setFatigue(0); setOwned([]); setWorn({}); setShowcase(false);
     setRecordInput(""); setRecordMessage("");
     locked.current = false;
     void client.read().then(value => { if (version === epoch.current) setSnapshot(value); }).catch(cause => {
@@ -343,6 +355,42 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     ? encodeRecord({ friendId, charge, committed, owned, worn })
     : "";
 
+  /** Grants the endgame outright so it can be seen in a short session. Flagged in the HUD. */
+  const applyShowcase = () => {
+    if (busy || paused) return;
+    ledger.current = {
+      committed: [...SHOWCASE.committed],
+      spent: definition.outcomes.map(() => 0n),
+      owned: COSMETICS.map(item => item.id),
+    };
+    setCommitted([...ledger.current.committed]);
+    setSpent([...ledger.current.spent]);
+    setOwned([...ledger.current.owned]);
+    setWorn({ ...SHOWCASE.worn });
+    setCharge(SHOWCASE.charge * RF_UNIT);
+    setFatigue(0);
+    setShowcase(true);
+    sound.current?.play("reward");
+    setRecordMessage("Showcase applied. A demonstration state, not earned progress.");
+  };
+
+  const clearShowcase = () => {
+    if (busy || paused) return;
+    ledger.current = {
+      committed: definition.outcomes.map(() => 0n),
+      spent: definition.outcomes.map(() => 0n),
+      owned: [],
+    };
+    setCommitted([...ledger.current.committed]);
+    setSpent([...ledger.current.spent]);
+    setOwned([]);
+    setWorn({});
+    setCharge(0n);
+    setFatigue(0);
+    setShowcase(false);
+    setRecordMessage("Showcase cleared. Back to Dormant.");
+  };
+
   const restoreRecord = () => {
     const result = decodeRecord(recordInput, friendId, definition.outcomes.length);
     if (!result.ok) { setRecordMessage(result.reason); return; }
@@ -400,6 +448,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
         <div className="asc-hud">
           <span className="asc-hud-wallet">{rf(snapshot.rfBalance)} · {snapshot.consumables.toString()} cells</span>
           <span className={`asc-tier asc-tier-${tierIndex}`}>{chassis} · {tier.name}</span>
+          {showcase && <span className="asc-showcase-flag">Showcase</span>}
           <button type="button" onClick={() => navigate("inventory")}>Salvage · {rf(salvage)}</button>
           <button type="button" onClick={() => navigate("settings")}>Settings</button>
         </div>
@@ -657,6 +706,19 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
                 <input type="checkbox" checked={reducedMotion} onChange={event => setReducedMotion(event.target.checked)} />
                 {" "}Reduce motion
               </label>
+              <div className="asc-record asc-showcase">
+                <strong>See the endgame</strong>
+                <p className="asc-note">
+                  Reaching Ascendant takes roughly 45 RF of fabrication, more than a short
+                  session allows. This fills your Friend with a finished state — top rank,
+                  full aura and every wearable — so the endgame can be seen now. It is a
+                  demonstration, not earned progress, and the HUD says so while it is on.
+                </p>
+                {showcase
+                  ? <button type="button" disabled={busy || paused} onClick={clearShowcase}>Clear showcase</button>
+                  : <button type="button" className="rf-frame-primary" disabled={busy || paused} onClick={applyShowcase}>Show me Ascendant</button>}
+              </div>
+
               <div className="asc-record">
                 <strong>Ascension Record</strong>
                 <p className="asc-note">
