@@ -156,3 +156,14 @@
   border-color:#ffd9ad !important;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .asc-showcase{border-color:rgba(255,179,107,.45);background:rgba(255,179,107,.07)}
 .asc-showcase>strong{color:#ffb36b}
+
+/* Names the next useful action; the station spans three platforms with no obvious start. */
+.asc-objective{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);
+  max-width:calc(100% - 32px);margin:0;padding:7px 14px;text-align:center;
+  font-size:13px;font-weight:700;letter-spacing:.03em;
+  color:#04222c;background:#00e5ff;border:1px solid #dffbff;
+  box-shadow:0 0 18px rgba(0,229,255,.35);pointer-events:none;z-index:4}
+
+@media(max-width:520px){
+  .asc-objective{bottom:66px;font-size:11px;padding:6px 10px}
+}

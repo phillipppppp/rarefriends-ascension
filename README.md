@@ -79,6 +79,8 @@ node tools/loop-e2e.mts        # the whole loop: walk, buy, fabricate, reveal, c
 node tools/outcomes-e2e.mts    # forces a miss and a jackpot, checks both screens
 node tools/race-e2e.mts        # click-spam cannot duplicate commits or purchases
 node tools/fuzz-e2e.mts        # randomised session, invariants must hold throughout
+node tools/objective-e2e.mts   # the on-screen objective tracks the player through the loop
+node tools/showcase-e2e.mts    # the endgame is reachable and always flagged as granted
 node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
 node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
 node tools/screenshots.mts     # regenerates docs/ images from the real runtime

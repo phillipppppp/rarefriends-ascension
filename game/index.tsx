@@ -284,6 +284,16 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const heldTotal = definition.outcomes.reduce((total, _item, index) => total + held(index), 0n);
   const salvage = definition.outcomes.reduce((total, item, index) => total + held(index) * item.reward, 0n);
 
+  /**
+   * The station spans three platforms and nothing says where to begin, so this names the
+   * next useful action. It follows the state rather than running a scripted tutorial.
+   */
+  const objective =
+    snapshot.consumables > 0n ? "Fabricate your Cell at the Assembler"
+    : heldTotal > 0n ? "Ascend at the Core, or shop at the Outfitter"
+    : snapshot.rfBalance >= definition.price ? "Buy a Cell at the Fabricator"
+    : "Out of RF — redeem salvage to keep playing";
+
   const fabricate = () =>
     act(async () => {
       const version = epoch.current;
@@ -452,6 +462,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
           <button type="button" onClick={() => navigate("inventory")}>Salvage · {rf(salvage)}</button>
           <button type="button" onClick={() => navigate("settings")}>Settings</button>
         </div>
+        <p className="asc-objective">{objective}</p>
         <p className="asc-hint">
           <span className="asc-desktop-hint">WASD / arrows to walk · Tap a destination · E near a station</span>
           <span className="asc-mobile-hint">Tap to walk · E / tap near a station</span>
