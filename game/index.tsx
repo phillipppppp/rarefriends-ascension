@@ -157,6 +157,12 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [worldNode, setWorldNode] = useState<HTMLDivElement | null>(null);
   const sound = useRef<FriendSoundKit | null>(null);
   const locked = useRef(false);
+  /**
+   * Committed and spent counts, mirrored synchronously. React batches state updates, so a
+   * guard that reads render state lets a fast double-click apply twice; this ref is written
+   * before the setState and is therefore authoritative within a single tick.
+   */
+  const ledger = useRef<{ committed: bigint[]; spent: bigint[]; owned: string[] }>({ committed: [], spent: [], owned: [] });
   const epoch = useRef(0);
   const definition = client.definition;
 
@@ -166,8 +172,13 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     sound.current = createFriendSoundKit();
     setSnapshot(null); setMenu(null); setResult(null); setError(""); setMessage("");
     setBusy(false); setMuted(false);
-    setCommitted(definition.outcomes.map(() => 0n));
-    setSpent(definition.outcomes.map(() => 0n));
+    ledger.current = {
+      committed: definition.outcomes.map(() => 0n),
+      spent: definition.outcomes.map(() => 0n),
+      owned: [],
+    };
+    setCommitted([...ledger.current.committed]);
+    setSpent([...ledger.current.spent]);
     setCharge(0n); setFatigue(0); setOwned([]); setWorn({});
     setRecordInput(""); setRecordMessage("");
     locked.current = false;
@@ -275,12 +286,18 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const yieldPercent = (TIER_YIELD[tierIndex] * BigInt(fatigueFactor(fatigue))) / 100n;
 
   const commit = (index: number) => {
-    if (busy || paused || held(index) <= 0n) return;
+    if (busy || paused) return;
     const reward = definition.outcomes[index].reward;
     if (reward <= 0n) return;
+    // Guard on the ref, not on render state, or a burst of clicks all pass the same check.
+    const remaining = (snapshot.inventory[index] ?? 0n)
+      - (ledger.current.committed[index] ?? 0n)
+      - (ledger.current.spent[index] ?? 0n);
+    if (remaining <= 0n) return;
+    ledger.current.committed[index] = (ledger.current.committed[index] ?? 0n) + 1n;
     // At the cap a commit still counts toward a rank's component gates, it just earns no charge.
     const gain = atCap ? 0n : (reward * yieldPercent) / 100n;
-    setCommitted(current => current.map((count, position) => (position === index ? count + 1n : count)));
+    setCommitted([...ledger.current.committed]);
     setCharge(current => (current + gain > capUnits ? capUnits : current + gain));
     setFatigue(current => current + 1);
     sound.current?.play("reward");
@@ -292,9 +309,9 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   /** Pays a shop price out of held components, most valuable first, and locks them away for good. */
   const purchase = (id: string) => {
     const item = cosmeticById(id);
-    if (!item || busy || paused || owned.includes(id) || tierIndex < item.tier) return;
+    // owned is checked against the ref too, so a burst of clicks cannot buy the same piece twice.
+    if (!item || busy || paused || ledger.current.owned.includes(id) || tierIndex < item.tier) return;
     let owing = item.price * RF_UNIT;
-    if (salvage < owing) { setError("Not enough salvage. Fabricate more components first."); return; }
     // Cheapest first, so a small purchase spends junk components instead of eating a Reactor.
     const order = definition.outcomes
       .map((component, index) => ({ index, reward: component.reward }))
@@ -302,15 +319,20 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
       .sort((a, b) => (a.reward > b.reward ? 1 : a.reward < b.reward ? -1 : 0));
     const taken = definition.outcomes.map(() => 0n);
     for (const entry of order) {
-      let available = held(entry.index);
+      // Availability comes from the ref for the same reason commit does.
+      let available = (snapshot.inventory[entry.index] ?? 0n)
+        - (ledger.current.committed[entry.index] ?? 0n)
+        - (ledger.current.spent[entry.index] ?? 0n);
       while (owing > 0n && available > 0n) {
         taken[entry.index] += 1n; available -= 1n; owing -= entry.reward;
       }
       if (owing <= 0n) break;
     }
     if (owing > 0n) { setError("Not enough salvage. Fabricate more components first."); return; }
-    setSpent(current => current.map((count, index) => count + taken[index]));
-    setOwned(current => [...current, id]);
+    taken.forEach((count, index) => { ledger.current.spent[index] = (ledger.current.spent[index] ?? 0n) + count; });
+    ledger.current.owned.push(id);
+    setSpent([...ledger.current.spent]);
+    setOwned([...ledger.current.owned]);
     setWorn(current => ({ ...current, [item.slot]: id }));
     sound.current?.play("purchase");
     setMessage(`${item.name} fitted. Salvage spent is gone for good.`);
@@ -328,9 +350,15 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     const validOwned = result.record.owned.filter(id => cosmeticById(id));
     const wornEye = result.record.worn.eye && validOwned.includes(result.record.worn.eye) ? result.record.worn.eye : undefined;
     const wornHead = result.record.worn.head && validOwned.includes(result.record.worn.head) ? result.record.worn.head : undefined;
+    ledger.current = {
+      committed: [...result.record.committed],
+      spent: definition.outcomes.map(() => 0n),
+      owned: [...validOwned],
+    };
     setCharge(result.record.charge > LIFETIME_CAP * RF_UNIT ? LIFETIME_CAP * RF_UNIT : result.record.charge);
-    setCommitted(result.record.committed);
-    setOwned(validOwned);
+    setCommitted([...ledger.current.committed]);
+    setSpent([...ledger.current.spent]);
+    setOwned([...ledger.current.owned]);
     setWorn({ eye: wornEye, head: wornHead });
     setFatigue(0);
     setRecordInput("");
