@@ -62,11 +62,20 @@ npx friendsdk test  games/ascension     # headless browser check
 Copy `tools/` alongside them to run the project's own tests:
 
 ```bash
-node tools/economy-sim.mjs   # whale analysis, 400 runs per profile
-node tools/record-test.ts    # save-code encode/decode units
-node tools/record-e2e.mts    # save codes, driven through the real runtime
-node tools/loop-e2e.mts      # the whole loop: walk, buy, fabricate, reveal, choose
+npx tsc -p game/tsconfig.json  # typecheck the game itself
+
+node tools/economy-sim.mjs     # whale analysis, 400 runs per profile
+node tools/record-test.ts      # save-code encode/decode units
+node tools/record-e2e.mts      # save codes, driven through the real runtime
+node tools/loop-e2e.mts        # the whole loop: walk, buy, fabricate, reveal, choose
+node tools/outcomes-e2e.mts    # forces a miss and a jackpot, checks both screens
+node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
+node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
 ```
+
+The SDK typechecks `src` and `examples` but not `games`, so `game/tsconfig.json` adds
+that — esbuild strips types without checking them, which had been hiding two implicit
+`any`s and three unresolved relative imports.
 
 `loop-e2e` is the interesting one: it walks the Friend across the station by clicking
 world coordinates through the SDK's own `project()`, approves the host's purchase
@@ -217,6 +226,11 @@ runtime. None of them are reimplemented in game code.
 
 - **Held components do not survive a reload.** Rank, committed components and wearables do,
   through an Ascension Record; the SDK's preview ledger is in memory, so inventory cannot.
+- **Records are tamper-evident, not tamper-proof.** The checksum catches corruption and
+  mistyping, and binds a record to its token id, but a determined player can forge one —
+  the algorithm is right there in `game/record.ts`. That is acceptable for a simulated
+  preview, where the balances are simulated anyway. On-chain the contract state is
+  authoritative and codes are not needed at all.
 - **Ascendant is out of reach in a single demo session** by design; it needs roughly 45 RF
   of fabrication to complete the rare-component set.
 - **Commit fatigue is subtle at the top rank**, where the rarity gate binds first and does

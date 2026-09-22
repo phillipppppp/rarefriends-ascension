@@ -8,10 +8,10 @@ import { GameMenu } from "@rarefriends/friendsdk/frame";
 import { formatGameAmount } from "@rarefriends/friendsdk/ui";
 import { maximumPrize, type GameSnapshot, type GamePlay } from "@rarefriends/friendsdk/game";
 import { createFriendSoundKit, type FriendSoundKit, type FriendSoundCue } from "@rarefriends/friendsdk/sounds";
-import { COSMETICS, CosmeticArt, cosmeticById, type CosmeticSlot } from "./cosmetics";
+import { COSMETICS, CosmeticArt, cosmeticById, type CosmeticSlot } from "./cosmetics.js";
 import { RewardReveal } from "@rarefriends/friendsdk/reveal";
-import { encodeRecord, decodeRecord } from "./record";
-import { COMPONENT_ITEMS } from "./components";
+import { encodeRecord, decodeRecord } from "./record.js";
+import { COMPONENT_ITEMS } from "./components.js";
 import "@rarefriends/friendsdk/frame.css";
 import "@rarefriends/friendsdk/world-view.css";
 import "@rarefriends/friendsdk/reveal.css";
@@ -439,9 +439,11 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
               <p>{rf(outcome.reward)} · {outcome.chanceBps / 100}% chance</p>
               {/* The choice is the point of the game, so it waits until the component is actually revealed. */}
               <p className="asc-fork">
-                {revealDone
-                  ? "Redeem it, commit it, or keep it as salvage for the Outfitter."
-                  : "Fabricating…"}
+                {!revealDone ? "Fabricating…"
+                  : outcome.reward > 0n
+                    ? "Redeem it, commit it, or keep it as salvage for the Outfitter."
+                    // A zero-value outcome is a miss: nothing to redeem, and the Core will not take it.
+                    : "A miss. Slag has no redemption value, and the Core has no use for it."}
               </p>
               {outcome.reward > 0n && (
                 <button
@@ -465,7 +467,14 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
                   Commit to the Core
                 </button>
               )}
-              <button type="button" disabled={busy || paused || !revealDone} onClick={() => navigate(null)}>Keep as salvage</button>
+              <button
+                type="button"
+                className={outcome.reward > 0n ? "" : "rf-frame-primary"}
+                disabled={busy || paused || !revealDone}
+                onClick={() => navigate(null)}
+              >
+                {outcome.reward > 0n ? "Keep as salvage" : "Back to the station"}
+              </button>
             </div>
           ) : menu === "core" ? (
             <>

@@ -73,6 +73,21 @@ await testGame("./games/ascension", {
     assert.ok(await game.locator(".asc-reward svg").count() > 0, "reveal should render artwork");
     const shown = await game.locator(".asc-reward h3").innerText();
     console.log(`PASS  revealed component artwork: ${shown}`);
+
+    // Slag is worth nothing, so the screen must not offer redeeming, committing or salvaging it.
+    const fork = await game.locator(".asc-fork").innerText();
+    const lastButton = await game.locator(".asc-reward button").last().innerText();
+    if (shown === "Slag") {
+      assert.match(fork, /A miss/, "a zero-value outcome must be described as a miss");
+      assert.equal(lastButton, "Back to the station");
+      assert.equal(await game.getByRole("button", { name: /^Redeem/ }).count(), 0, "Slag must not offer Redeem");
+      assert.equal(await game.getByRole("button", { name: /^Commit to the Core$/ }).count(), 0, "Slag must not offer Commit");
+    } else {
+      assert.match(fork, /Redeem it, commit it/, "a valuable outcome must offer all three choices");
+      assert.equal(lastButton, "Keep as salvage");
+      assert.equal(await game.getByRole("button", { name: /^Commit to the Core$/ }).count(), 1);
+    }
+    console.log(`PASS  choice copy matches the value of ${shown}`);
   },
 });
 console.log("\nfull loop verified: buy -> fabricate -> reveal -> choose");
