@@ -18,10 +18,11 @@ await testGame("./games/ascension", {
         y: ((py - VIEW.y) / VIEW.height) * box.height,
       } });
     };
+    /** Stations are entered from the HUD once the Friend walks into range. */
     const arriveAt = async (label: RegExp) => {
-      const p = game.getByRole("button", { name: label });
-      for (let i = 0; i < 30 && !(await p.isEnabled()); i += 1) await page.waitForTimeout(350);
-      return p;
+      const enter = game.getByRole("button", { name: label });
+      await enter.waitFor({ timeout: 20_000 });
+      return enter;
     };
     const approve = async () => {
       const c = page.getByRole("button", { name: "Confirm preview" });
@@ -35,7 +36,7 @@ await testGame("./games/ascension", {
     console.log("PASS  fresh start ->", atStart);
 
     await walkTo(203, 152);
-    await (await arriveAt(/^Fabricator/)).click();
+    await (await arriveAt(/^Enter Fabricator$/)).click();
     await game.getByRole("button", { name: /^Buy one cell/ }).click();
     await approve();
     await game.getByRole("button", { name: "Close Fabricator" }).click();
@@ -45,7 +46,7 @@ await testGame("./games/ascension", {
     console.log("PASS  holding a Cell ->", holdingCell);
 
     await walkTo(470, 160);
-    await (await arriveAt(/^Assembler/)).click();
+    await (await arriveAt(/^Enter Assembler$/)).click();
     await game.getByRole("button", { name: /^Fabricate one component$/ }).click();
     await approve();
     await game.getByText("Fabrication complete", { exact: true }).waitFor();

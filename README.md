@@ -46,8 +46,15 @@ the same scarce resource, and that tension is the game.
 | **Outfitter** | top-left | Buy wearables with salvage |
 | **The Core** | bottom | Commit components, ascend |
 
-Walk with **WASD** or the arrow keys, or tap a destination. Press **E** near a station,
-or tap its prompt. Everything is reachable by keyboard and by touch.
+Walk with **WASD**, the arrow keys, or by tapping anywhere on the ground. Stand at a station
+and an **Enter** button appears in the HUD; **E** does the same. Everything is reachable by
+keyboard and by touch.
+
+Stations have no floating label over the world. The SDK prompt is sized in CSS pixels while
+the world canvas scales down, so at phone width an enabled prompt made about a third of the play
+area untappable — and tapping is the only way to walk on a phone. Proximity is detected from the
+live Friend position and the action lives in the HUD instead, leaving the whole canvas free for
+movement. Verified at 390px and 960px.
 
 ## Running locally
 

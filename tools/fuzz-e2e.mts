@@ -26,10 +26,11 @@ await testGame("./games/ascension", {
         y: ((py - VIEW.y) / VIEW.height) * box.height,
       } });
     };
+    /** Stations are entered from the HUD once the Friend walks into range. */
     const arriveAt = async (label: RegExp) => {
-      const p = game.getByRole("button", { name: label });
-      for (let i = 0; i < 30 && !(await p.isEnabled()); i += 1) await page.waitForTimeout(350);
-      return p;
+      const enter = game.getByRole("button", { name: label });
+      await enter.waitFor({ timeout: 20_000 });
+      return enter;
     };
     const approve = async () => {
       const c = page.getByRole("button", { name: "Confirm preview" });
@@ -47,7 +48,7 @@ await testGame("./games/ascension", {
 
     // Buy the cells up front.
     await walkTo(203, 152);
-    await (await arriveAt(/^Fabricator/)).click();
+    await (await arriveAt(/^Enter Fabricator$/)).click();
     for (let i = 0; i < ROUNDS; i += 1) {
       await game.getByRole("button", { name: /^Buy one cell/ }).click();
       await approve();
@@ -56,7 +57,7 @@ await testGame("./games/ascension", {
     await game.getByRole("button", { name: "Close Fabricator" }).click();
 
     await walkTo(470, 160);
-    const assembler = await arriveAt(/^Assembler/);
+    const assembler = await arriveAt(/^Enter Assembler$/);
 
     for (let round = 0; round < ROUNDS; round += 1) {
       const pick = Math.floor(Math.random() * BANDS.length);
@@ -88,7 +89,7 @@ await testGame("./games/ascension", {
 
     // Invariants.
     await walkTo(330, 290);
-    await (await arriveAt(/^The Core/)).click();
+    await (await arriveAt(/^Enter The Core$/)).click();
     const coreText = (await game.locator(".rf-frame-menu-body").innerText()).replace(/\s+/g, " ");
 
     for (let i = 1; i < NAMES.length; i += 1) {

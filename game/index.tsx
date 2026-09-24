@@ -38,12 +38,42 @@ const world = validateWorld({
 /** Far enough from every station that the Friend starts unprompted and has to walk. */
 const spawn = [230, 290] as const;
 
-const interactions: readonly GameWorldInteraction[] = [
-  { id: "shop", label: "Outfitter", position: [107, 67], reach: 50, labelOffset: -150 },
-  { id: "fabricator", label: "Fabricator", position: [203, 120], reach: 50, labelOffset: -170 },
-  { id: "assembler", label: "Assembler", position: [491, 148], reach: 58, labelOffset: -150 },
-  { id: "core", label: "The Core", position: [347, 310], reach: 58, labelOffset: -140 },
+/**
+ * Stations are not drawn as SDK floating prompts. Those are sized in CSS pixels while the
+ * world canvas scales down, so at phone width an enabled prompt made 35% of the world
+ * untappable — and tapping is the only way to walk on a phone. Proximity is tracked here
+ * and the action lives in the HUD, leaving the whole canvas free for movement.
+ */
+const STATIONS = [
+  { id: "shop" as const, label: "Outfitter", x: 107, y: 67, reach: 62 },
+  { id: "fabricator" as const, label: "Fabricator", x: 203, y: 120, reach: 62 },
+  { id: "assembler" as const, label: "Assembler", x: 491, y: 148, reach: 70 },
+  { id: "core" as const, label: "The Core", x: 347, y: 310, reach: 70 },
 ];
+
+/** Reports the station the Friend is standing at, reading the live canvas position. */
+function useNearestStation(world: HTMLDivElement | null) {
+  const [near, setNear] = useState<(typeof STATIONS)[number] | null>(null);
+  useEffect(() => {
+    if (!world) return;
+    let frame = 0;
+    const tick = () => {
+      const canvas = world.querySelector("canvas");
+      if (canvas) {
+        const x = Number(canvas.dataset.x);
+        const y = Number(canvas.dataset.y);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          const found = STATIONS.find(station => Math.hypot(station.x - x, station.y - y) <= station.reach) ?? null;
+          setNear(current => (current?.id === found?.id ? current : found));
+        }
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [world]);
+  return near;
+}
 
 /**
  * Ascension gates. Charge alone is buyable, so every rank past Primed also demands
@@ -167,6 +197,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [muted, setMuted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [worldNode, setWorldNode] = useState<HTMLDivElement | null>(null);
+  const near = useNearestStation(worldNode);
   const sound = useRef<FriendSoundKit | null>(null);
   const locked = useRef(false);
   /**
@@ -205,6 +236,18 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
       preference.removeEventListener("change", update);
     };
   }, [client, friendId, definition]);
+
+  // The SDK binds E to its own prompts; those are gone, so the shortcut is rebound here.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "e" || event.repeat) return;
+      if (menu !== null || paused || !near) return;
+      event.preventDefault();
+      setMenu(near.id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menu, paused, near]);
 
   async function act(work: () => Promise<void>, cue?: FriendSoundCue, after?: () => void) {
     if (locked.current || paused) return;
@@ -288,8 +331,15 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
    * The station spans three platforms and nothing says where to begin, so this names the
    * next useful action. It follows the state rather than running a scripted tutorial.
    */
+  /** Where the next useful action actually is, so guidance beats mere proximity. */
+  const taskStation =
+    snapshot.consumables > 0n ? "assembler"
+    : heldTotal > 0n ? "core"
+    : snapshot.rfBalance >= definition.price ? "fabricator"
+    : null;
   const objective =
-    snapshot.consumables > 0n ? "Fabricate your Cell at the Assembler"
+    near && near.id === taskStation ? `Tap Enter ${near.label}, or press E`
+    : snapshot.consumables > 0n ? "Fabricate your Cell at the Assembler"
     : heldTotal > 0n ? "Ascend at the Core, or shop at the Outfitter"
     : snapshot.rfBalance >= definition.price ? "Buy a Cell at the Fabricator"
     : "Out of RF — redeem salvage to keep playing";
@@ -439,7 +489,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
         <GameWorld
           world={world}
           spawn={spawn}
-          interactions={interactions}
+          interactions={[]}
           friendId={friendId}
           paused={Boolean(menu) || paused}
           reducedMotion={reducedMotion}
@@ -459,6 +509,11 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
           <span className="asc-hud-wallet">{rf(snapshot.rfBalance)} · {snapshot.consumables.toString()} cells</span>
           <span className={`asc-tier asc-tier-${tierIndex}`}>{chassis} · {tier.name}</span>
           {showcase && <span className="asc-showcase-flag">Showcase</span>}
+          {near && (
+            <button type="button" className="rf-frame-primary asc-enter" onClick={() => navigate(near.id)}>
+              Enter {near.label}
+            </button>
+          )}
           <button type="button" onClick={() => navigate("inventory")}>Salvage · {rf(salvage)}</button>
           <button type="button" onClick={() => navigate("settings")}>Settings</button>
         </div>

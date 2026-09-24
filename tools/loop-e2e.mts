@@ -27,13 +27,11 @@ await testGame("./games/ascension", {
       } });
     };
 
+    /** Stations are entered from the HUD once the Friend walks into range. */
     const arriveAt = async (label: RegExp) => {
-      const prompt = game.getByRole("button", { name: label });
-      for (let attempt = 0; attempt < 30; attempt += 1) {
-        if (await prompt.isEnabled()) return prompt;
-        await page.waitForTimeout(400);
-      }
-      throw new Error(`never got close enough to ${label}`);
+      const enter = game.getByRole("button", { name: label });
+      await enter.waitFor({ timeout: 20_000 });
+      return enter;
     };
 
     /** Mutations are approved in the host chrome, not inside the game. */
@@ -44,7 +42,7 @@ await testGame("./games/ascension", {
     };
 
     await walkTo(203, 152);
-    await (await arriveAt(/^Fabricator/)).click();
+    await (await arriveAt(/^Enter Fabricator$/)).click();
     console.log("PASS  walked to the Fabricator");
 
     await game.getByRole("button", { name: /^Buy one cell/ }).click();
@@ -54,7 +52,7 @@ await testGame("./games/ascension", {
     await game.getByRole("button", { name: "Close Fabricator" }).click();
 
     await walkTo(470, 160);
-    await (await arriveAt(/^Assembler/)).click();
+    await (await arriveAt(/^Enter Assembler$/)).click();
     console.log("PASS  walked to the Assembler");
 
     await game.getByRole("button", { name: /^Fabricate one component$/ }).click();

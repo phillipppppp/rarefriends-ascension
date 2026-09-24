@@ -20,10 +20,11 @@ await testGame("./games/ascension", {
         y: ((py - VIEW.y) / VIEW.height) * box.height,
       } });
     };
+    /** Stations are entered from the HUD once the Friend walks into range. */
     const arriveAt = async (label: RegExp) => {
-      const prompt = game.getByRole("button", { name: label });
-      for (let i = 0; i < 30 && !(await prompt.isEnabled()); i += 1) await page.waitForTimeout(400);
-      return prompt;
+      const enter = game.getByRole("button", { name: label });
+      await enter.waitFor({ timeout: 20_000 });
+      return enter;
     };
     const approve = async () => {
       const confirm = page.getByRole("button", { name: "Confirm preview" });
@@ -38,7 +39,7 @@ await testGame("./games/ascension", {
       }, value);
 
     await walkTo(203, 152);
-    await (await arriveAt(/^Fabricator/)).click();
+    await (await arriveAt(/^Enter Fabricator$/)).click();
     for (let i = 0; i < 2; i += 1) {
       await game.getByRole("button", { name: /^Buy one cell/ }).click();
       await approve();
@@ -46,7 +47,7 @@ await testGame("./games/ascension", {
     }
     await game.getByRole("button", { name: "Close Fabricator" }).click();
     await walkTo(470, 160);
-    const assembler = await arriveAt(/^Assembler/);
+    const assembler = await arriveAt(/^Enter Assembler$/);
 
     for (const [roll, expected] of [[500, "Slag"], [9900, "Reactor"]] as const) {
       await forceRoll(roll);

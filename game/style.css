@@ -167,3 +167,7 @@
 @media(max-width:520px){
   .asc-objective{bottom:66px;font-size:11px;padding:6px 10px}
 }
+
+/* The station action lives in the HUD, so it never covers walkable ground. */
+.asc-enter{animation:asc-enter-pulse 1.6s ease-in-out infinite}
+@keyframes asc-enter-pulse{0%,100%{box-shadow:0 0 0 rgba(0,229,255,0)}50%{box-shadow:0 0 16px rgba(0,229,255,.7)}}

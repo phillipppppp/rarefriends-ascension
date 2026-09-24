@@ -17,10 +17,11 @@ await testGame("./games/ascension", {
         y: ((py - VIEW.y) / VIEW.height) * box.height,
       } });
     };
+    /** Stations are entered from the HUD once the Friend walks into range. */
     const arriveAt = async (label: RegExp) => {
-      const p = game.getByRole("button", { name: label });
-      for (let i = 0; i < 30 && !(await p.isEnabled()); i += 1) await page.waitForTimeout(350);
-      return p;
+      const enter = game.getByRole("button", { name: label });
+      await enter.waitFor({ timeout: 20_000 });
+      return enter;
     };
     const shot = async (name: string) => {
       await page.waitForTimeout(500);
@@ -30,13 +31,13 @@ await testGame("./games/ascension", {
 
     // The Core, at Dormant, so the rank gates are visible rather than "fully ascended".
     await walkTo(330, 290);
-    await (await arriveAt(/^The Core/)).click();
+    await (await arriveAt(/^Enter The Core$/)).click();
     await shot("core");
     await game.getByRole("button", { name: /^Close The Core/ }).click();
 
     // The Outfitter, at Dormant, so the rank locks on the better wearables show.
     await walkTo(140, 100);
-    await (await arriveAt(/^Outfitter/)).click();
+    await (await arriveAt(/^Enter Outfitter$/)).click();
     await shot("outfitter");
     await game.getByRole("button", { name: /^Close Outfitter/ }).click();
 
