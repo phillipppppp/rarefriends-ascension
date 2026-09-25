@@ -25,13 +25,20 @@ for (const [label, width, height] of [["desktop", 960, 800], ["phone", 390, 780]
 
       await game.getByRole("button", { name: /^Settings$/ }).click();
 
+      // Every function inside evaluate stays anonymous: a named one, including a named arrow
+      // assigned to a const, makes the bundler emit a __name helper the page does not have.
       const sample = await game.locator(".rf-frame-menu").evaluate((menu: HTMLElement) => {
         const bg = getComputedStyle(menu).backgroundColor;
-        const pick = (sel: string) => {
-          const el = menu.querySelector(sel) as HTMLElement | null;
-          return el ? { sel, color: getComputedStyle(el).color, text: (el.textContent ?? "").slice(0, 28) } : null;
+        const selectors = ["h2", ".asc-note", ".asc-record-label", ".asc-record>strong"];
+        return {
+          bg,
+          items: selectors.map(function (sel) {
+            const el = menu.querySelector(sel) as HTMLElement | null;
+            return el
+              ? { sel, color: getComputedStyle(el).color, text: (el.textContent ?? "").slice(0, 28) }
+              : null;
+          }).filter(Boolean),
         };
-        return { bg, items: [pick("h2"), pick(".asc-note"), pick(".asc-record-label"), pick(".asc-record>strong")].filter(Boolean) };
       });
 
       console.log(`\n=== ${label} (${width}x${height}) ===`);
@@ -43,7 +50,10 @@ for (const [label, width, height] of [["desktop", 960, 800], ["phone", 390, 780]
         if (r < 4.5) problems.push(`CONTRAST ${r.toFixed(2)}:1 on ${item.sel}`);
       }
 
-      // Keyboard: can the world canvas take focus and does something focusable follow?
+      // Keyboard: can the world canvas take focus? The menu opened above must be closed first —
+      // an open menu makes the world inert on purpose, so checking here reported a false problem.
+      await game.getByRole("button", { name: /^Close Settings$/ }).click();
+      await page.waitForTimeout(300);
       const canFocusCanvas = await game.locator("canvas").evaluate((c: HTMLElement) => {
         c.focus();
         return document.activeElement === c;
