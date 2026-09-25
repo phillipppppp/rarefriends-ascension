@@ -47,8 +47,11 @@ the same scarce resource, and that tension is the game.
 | **The Core** | bottom | Commit components, ascend |
 
 Walk with **WASD**, the arrow keys, or by tapping anywhere on the ground. Stand at a station
-and an **Enter** button appears in the HUD; **E** does the same. Everything is reachable by
-keyboard and by touch.
+and an **Enter** button appears in the HUD; **E** does the same. **Escape** closes whatever is
+open, one layer at a time, and does nothing when nothing is open — it deliberately never
+interferes with the SDK's own purchase confirmation, which is the host's to dismiss. Every
+panel keeps its own close control, so touch is never left without a way out. Everything is
+reachable by keyboard and by touch.
 
 Stations have no floating label over the world. The SDK prompt is sized in CSS pixels while
 the world canvas scales down, so at phone width an enabled prompt made about a third of the play
@@ -89,6 +92,9 @@ node tools/fuzz-e2e.mts        # randomised session, invariants must hold throug
 node tools/objective-e2e.mts   # the on-screen objective tracks the player through the loop
 node tools/showcase-e2e.mts    # the endgame is reachable and always flagged as granted
 node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
+node tools/tap-audit.mts       # every tap reaches the world at 390px and 960px
+node tools/controls-audit.mts  # live regions, mute, and reduced motion both ways
+node tools/esc-audit.mts       # Escape closes the topmost layer and nothing else
 node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
 node tools/screenshots.mts     # regenerates docs/ images from the real runtime
 ```
