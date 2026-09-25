@@ -16,6 +16,12 @@ for (const [label, width, height] of [["desktop", 960, 800], ["phone", 390, 780]
   await testGame("./games/ascension", {
     width, height, timeout: 30_000,
     check: async ({ page, game }) => {
+      // How to Play opens on load, so every suite dismisses it before touching the world.
+      const helpGotIt = game.getByRole("button", { name: /^Got it$/ });
+      if (await helpGotIt.count() > 0) {
+        await helpGotIt.click();
+        await helpGotIt.waitFor({ state: "detached", timeout: 8000 });
+      }
       page.on("console", m => { if (m.type() === "error") problems.push(`CONSOLE ${m.text()}`); });
 
       // Horizontal overflow anywhere?

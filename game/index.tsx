@@ -129,7 +129,7 @@ const chassisFor = (friendId: bigint) => CHASSIS[Number(((friendId % 6n) + 6n) %
 
 const RF_UNIT = 10n ** 18n;
 const rf = (value: bigint) => `${formatGameAmount(value, 18)} RF`;
-type Menu = "shop" | "fabricator" | "assembler" | "core" | "inventory" | "settings" | "reward" | null;
+type Menu = "shop" | "fabricator" | "assembler" | "core" | "inventory" | "settings" | "reward" | "help" | null;
 
 /** Mirrors the runtime camera in world-view so overlays land exactly on the canvas sprite. */
 const VIEW = { x: 320, y: 330, width: 960, height: 640 };
@@ -195,6 +195,8 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [muted, setMuted] = useState(false);
+  /** Phone-sized or touch-driven, so the help screen can name the right controls. */
+  const [touch, setTouch] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [worldNode, setWorldNode] = useState<HTMLDivElement | null>(null);
   const near = useNearestStation(worldNode);
@@ -213,7 +215,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
     const version = ++epoch.current;
     // The SDK default is unmuted; audio still needs a user gesture before it can start.
     sound.current = createFriendSoundKit();
-    setSnapshot(null); setMenu(null); setResult(null); setError(""); setMessage("");
+    setSnapshot(null); setMenu("help"); setResult(null); setError(""); setMessage("");
     setBusy(false); setMuted(false);
     ledger.current = {
       committed: definition.outcomes.map(() => 0n),
@@ -238,6 +240,14 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   }, [client, friendId, definition]);
 
   // The SDK binds E to its own prompts; those are gone, so the shortcut is rebound here.
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 520px), (pointer: coarse)");
+    const follow = () => setTouch(query.matches);
+    follow();
+    query.addEventListener("change", follow);
+    return () => query.removeEventListener("change", follow);
+  }, []);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() !== "e" || event.repeat) return;
@@ -475,7 +485,8 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
   };
 
   const title =
-    menu === "shop" ? "Outfitter"
+    menu === "help" ? "How to Play"
+    : menu === "shop" ? "Outfitter"
     : menu === "fabricator" ? "Fabricator"
     : menu === "assembler" ? "Assembler"
     : menu === "core" ? `The Core · ${tier.name}`
@@ -515,6 +526,7 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
             </button>
           )}
           <button type="button" onClick={() => navigate("inventory")}>Salvage · {rf(salvage)}</button>
+          <button type="button" className="asc-help-open" aria-label="How to play" onClick={() => navigate("help")}>?</button>
           <button type="button" onClick={() => navigate("settings")}>Settings</button>
         </div>
         <p className="asc-objective">{objective}</p>
@@ -525,8 +537,26 @@ export default function Ascension({ friendId, client, paused }: GameComponentPro
       </div>
 
       {menu && (
-        <GameMenu title={title} onClose={busy ? undefined : () => navigate(null)}>
-          {menu === "fabricator" ? (
+        <GameMenu
+          title={title}
+          onClose={busy ? undefined : () => navigate(null)}
+          footer={menu === "help"
+            ? <button type="button" className="rf-frame-primary" onClick={() => navigate(null)}>Got it</button>
+            : undefined}
+        >
+          {menu === "help" ? (
+            <>
+              <ol className="asc-help">
+                <li><strong>Buy a Cell ({rf(definition.price)})</strong>, then fabricate it into a
+                  component.</li>
+                <li><strong>{touch ? "Tap to walk." : "Walk with WASD."}</strong>{" "}
+                  {touch ? "Tap a station to enter." : "Press E at a station."}</li>
+                <li><strong>One choice per component:</strong> <em>redeem</em> for RF,{" "}
+                  <em>commit</em> for rank, or <em>keep</em> as salvage.</li>
+                <li><strong>You only get one.</strong> Rank is not for sale.</li>
+              </ol>
+            </>
+          ) : menu === "fabricator" ? (
             <>
               <p>One cell costs {rf(definition.price)} and fabricates one component.</p>
               <table>

@@ -7,6 +7,12 @@ await testGame("./games/ascension", {
   screenshot: "./artifacts/showcase.png",
   timeout: 30_000,
   check: async ({ page, game }) => {
+      // How to Play opens on load, so every suite dismisses it before touching the world.
+      const helpGotIt = game.getByRole("button", { name: /^Got it$/ });
+      if (await helpGotIt.count() > 0) {
+        await helpGotIt.click();
+        await helpGotIt.waitFor({ state: "detached", timeout: 8000 });
+      }
     await game.getByRole("button", { name: /^Settings$/ }).click();
     await game.getByRole("button", { name: /^Show me Ascendant$/ }).click();
     await page.waitForTimeout(500);

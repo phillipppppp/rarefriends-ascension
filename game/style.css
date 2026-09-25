@@ -171,3 +171,14 @@
 /* The station action lives in the HUD, so it never covers walkable ground. */
 .asc-enter{animation:asc-enter-pulse 1.6s ease-in-out infinite}
 @keyframes asc-enter-pulse{0%,100%{box-shadow:0 0 0 rgba(0,229,255,0)}50%{box-shadow:0 0 16px rgba(0,229,255,.7)}}
+
+/* --- How to Play. Shown on load, reopened from the "?" in the HUD. --- */
+.asc-help{margin:0;padding:0 0 0 20px;display:grid;gap:9px;text-align:left;
+  max-width:46ch;font-size:14px;line-height:1.45}
+.asc-help strong{color:#fff4dc}
+.asc-help em{color:#ffd76b;font-style:normal;font-weight:700}
+/* The "?" sits beside Settings and stays a comfortable thumb target on a phone. */
+.asc-help-open{min-width:34px;font-weight:800}
+@media(max-width:520px){
+  .asc-help{font-size:12.5px;line-height:1.34;padding-left:17px;gap:6px;max-width:none}
+}

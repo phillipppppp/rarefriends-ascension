@@ -47,7 +47,10 @@ the same scarce resource, and that tension is the game.
 | **The Core** | bottom | Commit components, ascend |
 
 Walk with **WASD**, the arrow keys, or by tapping anywhere on the ground. Stand at a station
-and an **Enter** button appears in the HUD; **E** does the same. **Escape** closes whatever is
+and an **Enter** button appears in the HUD; **E** does the same. A **How to Play** card opens on
+load, before anything else: four lines covering the loop and the redeem / commit / keep choice,
+naming taps on a phone and keys on a desktop. Close it with **Got it**, the **X**, or **Escape**,
+and reopen it any time from the **?** in the HUD. **Escape** closes whatever is
 open, one layer at a time, and does nothing when nothing is open — it deliberately never
 interferes with the SDK's own purchase confirmation, which is the host's to dismiss. Every
 panel keeps its own close control, so touch is never left without a way out. Everything is
@@ -95,6 +98,7 @@ node tools/keyboard-audit.mts  # canvas focus, WASD movement, tab order
 node tools/tap-audit.mts       # every tap reaches the world at 390px and 960px
 node tools/controls-audit.mts  # live regions, mute, and reduced motion both ways
 node tools/esc-audit.mts       # Escape closes the topmost layer and nothing else
+node tools/help-audit.mts      # How to Play: opens first, right controls, closes three ways
 node tools/contrast-audit.mts  # text contrast and overflow at desktop and phone
 node tools/screenshots.mts     # regenerates docs/ images from the real runtime
 ```

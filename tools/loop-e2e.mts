@@ -15,6 +15,12 @@ await testGame("./games/ascension", {
   timeout: 30_000,
   screenshot: "./artifacts/loop-e2e.png",
   check: async ({ page, game }) => {
+      // How to Play opens on load, so every suite dismisses it before touching the world.
+      const helpGotIt = game.getByRole("button", { name: /^Got it$/ });
+      if (await helpGotIt.count() > 0) {
+        await helpGotIt.click();
+        await helpGotIt.waitFor({ state: "detached", timeout: 8000 });
+      }
     const canvas = game.locator("canvas");
     const box = (await canvas.boundingBox())!;
 

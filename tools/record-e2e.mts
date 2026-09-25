@@ -24,6 +24,12 @@ const otherFriend = encodeRecord({
 await testGame("./games/ascension", {
   screenshot: "./artifacts/record-e2e.png",
   check: async ({ game }) => {
+      // How to Play opens on load, so every suite dismisses it before touching the world.
+      const helpGotIt = game.getByRole("button", { name: /^Got it$/ });
+      if (await helpGotIt.count() > 0) {
+        await helpGotIt.click();
+        await helpGotIt.waitFor({ state: "detached", timeout: 8000 });
+      }
     await game.getByRole("button", { name: /^Settings$/ }).click();
 
     const current = game.locator("#asc-current-record");
